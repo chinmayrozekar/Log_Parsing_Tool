@@ -34,8 +34,7 @@ While Google Gemini CLI served as the implementation engine, the system's archit
 The following pivots and constraints were directed by the Project Owner to ensure industrial viability:
 
 1. **Domain Specification:** Directed the creation of high-fidelity simulation logs for **EDA (Electronic Design Automation)** and **SLT (System Level Test)**. Provided the context for hierarchical netlists (Inverters/NAND gates) and peripheral link negotiations (PCIe Gen5/USB 3.1).
-2. **Standardization of Quality:** Enforced a strict "No Emoji / No Em-Dash" professional standard for all documentation and source code to ensure compatibility with industrial terminal environments.
-3. **Safety and Privacy:** Mandated a "Local-First" approach. Enforced that all proprietary 80GB logs must be processed locally on the CPU, ensuring zero data leakage to external cloud services during the triage phase.
+2. **Safety and Privacy:** Mandated a "Local-First" approach. Enforced that all proprietary 80GB logs must be processed locally on the CPU, ensuring zero data leakage to external cloud services during the triage phase.
 4. **Actionability:** Directed the implementation of **Severity Filtering** and **Density Ranking**. Shifted the tool from a "Pattern List" to an "Intelligent Triage Dashboard" that ranks failures by frequency and provides exact line-number traceability.
 5. **Executable Vision:** Defined the end-goal of a standalone terminal binary, moving the project away from Jupyter Notebooks and toward a deployable CLI tool for professional engineering teams.
 
