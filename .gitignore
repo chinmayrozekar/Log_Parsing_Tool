@@ -153,3 +153,4 @@ cython_debug/
 data/chroma_db/
 data/raw_logs/*.log
 *.ipynb
+GEMINI.md
