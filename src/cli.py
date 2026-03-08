@@ -20,8 +20,9 @@ def generate_logs(file, size):
 
 @cli.command()
 @click.option('--file', required=True, help='Path to the log file to parse.')
-def parse(file):
-    """Parse a log file using Parallel Drain3 to extract templates."""
+@click.option('--severity', help='Filter by severity (e.g., ERROR,FAIL).')
+def parse(file, severity):
+    """Parse a log file with Intelligence (filtering and trends)."""
     if not os.path.exists(file):
         click.echo(f"Error: File {file} not found.")
         return
@@ -29,11 +30,21 @@ def parse(file):
     cpu_count = multiprocessing.cpu_count()
     click.echo(f"Parsing log file in parallel ({cpu_count} cores): {file}...")
     parser = LogParser()
-    summary = parser.parse_file_parallel(file)
+    summary = parser.parse_file_parallel(file, filter_severity=severity)
     
-    click.echo(f"\nDiscovered {len(summary)} Unique Log Templates:\n")
-    for i, (template, count) in enumerate(summary.items(), 1):
-        click.echo(f"ID {i} (Count: {count}): {template}")
+    # Sort by count (Failure Density)
+    sorted_summary = sorted(summary.items(), key=lambda x: x[1]['count'], reverse=True)
+
+    click.echo(f"\nFound {len(sorted_summary)} Intelligent Patterns (Sorted by Density):\n")
+    click.echo(f"{'ID':<5} {'FREQ':<8} {'SEV':<10} {'FIRST LINE (approx)':<20} {'TEMPLATE'}")
+    click.echo("-" * 100)
+    
+    for i, (template, data) in enumerate(sorted_summary, 1):
+        # Calculate approx global line number based on chunk and line count
+        # In this simplistic version, we'll just show the chunk ID and local count
+        # for true traceability.
+        loc = f"Chunk {data['chunk_id']}:{data['first_line_in_chunk']}"
+        click.echo(f"{i:<5} {data['count']:<8} {data['severity']:<10} {loc:<20} {template}")
 
 @cli.command()
 @click.option('--file', required=True, help='Path to the PDF technical manual.')
