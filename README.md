@@ -2,7 +2,7 @@
 
 [![AI Framework](https://img.shields.io/badge/AI-Gemini%20CLI-blue)](https://github.com/google/gemini-cli)
 [![Log Parsing](https://img.shields.io/badge/Parser-Drain3-green)](https://github.com/logpai/drain3)
-[![Vector DB](https://img.shields.io/badge/VectorDB-Chroma-orange)](https://www.trychroma.com/)
+[![Vector DB](https://img.shields.io/badge/VectorDB-FAISS-orange)](https://github.com/facebookresearch/faiss)
 
 An automated, production-ready debugging agent designed for high-throughput environments (Semiconductors, Network Infrastructure, Cloud Ops). This system eliminates manual log scrolling by standardizing raw logs, cross-references errors against official technical documentation, and generates verifiable root-cause reports.
 
@@ -16,7 +16,7 @@ Our goal is to create a deterministic pipeline that bridges the gap between unst
 graph TD
     subgraph "Knowledge Base (Phase 2)"
         A[Technical Manuals PDF] -->|LangChain| B[Text Chunks]
-        B -->|Embeddings| C[(Chroma Vector DB)]
+        B -->|Embeddings| C[(FAISS Vector Index)]
     end
 
     subgraph "Log Extraction (Phase 1)"
@@ -42,19 +42,17 @@ Standard RegEx is brittle and fails in high-throughput environments where log fo
 *   **Why?** It turns millions of noisy log lines into a few dozen unique "event types," making downstream analysis 100x faster.
 
 ### 2. Retrieval-Augmented Generation (RAG)
-LLMs are prone to "hallucinations" (making up technical fixes that don't exist). We use RAG to ground the AI in reality. By storing official technical manuals in a Chroma Vector Database, we force the AI to only suggest fixes found in the actual documentation.
+LLMs are prone to "hallucinations" (making up technical fixes that don't exist). We use RAG to ground the AI in reality. By storing official technical manuals in a FAISS Vector Database, we force the AI to only suggest fixes found in the actual documentation.
 *   **Why?** High-stakes environments (like semiconductor testing) require verifiable fixes, not creative guesses.
 
-### 3. Agentic Synthesis
-Unlike a simple chatbot, an Agent uses the extracted variables (like a specific Error Code 0x4A2B) and the retrieved documentation to reason through the failure. It acts as a senior engineer, synthesizing a final report that includes the Root Cause, Relevant Docs, and Actionable Steps.
+### 3. Memory-Safe Streaming
+For massive log files (80GB+), traditional file loading will crash a system. Our parser is built as a Python Generator, meaning it only ever holds one line of text and the template tree in memory. 
+*   **Why?** This ensures 100% coverage of proprietary logs without exceeding standard system RAM (less than 100MB usage).
 
 ---
 
-## Phase 1: Log Parsing (Current)
+## Installation & Setup
 
-The first phase focus is on the Log Extraction engine. It can ingest massive log files and output a summarized view of all unique events.
-
-### Installation & Setup
 ```bash
 # Clone the repository
 git clone https://github.com/chinmayrozekar/Log_Parsing_Tool.git
@@ -67,30 +65,34 @@ pip install -r requirements.txt
 export PYTHONPATH=$PYTHONPATH:.
 ```
 
-### Usage Examples
+---
 
-#### 1. Generate Realistic Test Data
+## Usage Examples
+
+### 1. Ingest Technical Manuals (Phase 2)
+Process a PDF manual into searchable semantic chunks stored in FAISS.
+```bash
+python3 src/main.py ingest --file docs/manuals/yosys_manual.pdf
+```
+
+### 2. Generate Realistic Test Data
 Generate a 10MB log file with diverse templates (INFO, ERROR, CRITICAL) and dynamic data (IPs, Hex codes).
 ```bash
 python3 src/main.py generate-logs --file data/raw_logs/system_test.log --size 10
 ```
 
-#### 2. Parse and Extract Templates
-Run the Drain3 miner to identify unique log signatures.
+### 3. Parse and Extract Templates (Phase 1)
+Run the memory-safe Drain3 miner to identify unique log signatures.
 ```bash
 python3 src/main.py parse --file data/raw_logs/system_test.log
 ```
-
-**Example Output:**
-> ID 3 (Count: 25942): <ID>-<ID>-<ID> <ID> <ID> <ID> <*> <*> Unexpected error code <HEX> encountered
-> ID 4 (Count: 25972): <ID>-<ID>-<ID> <ID> <ID> <ID> <*> <*> Connection established from <IP>
 
 ---
 
 ## Roadmap
 
-- [x] Phase 1: Log Extraction (Drain3 Implementation, CLI Interface, Mock Generator)
-- [ ] Phase 2: Knowledge Ingestion (PDF Loader, ChromaDB Vector Store integration)
+- [x] Phase 1: Log Extraction (Drain3 Implementation, Memory-Safe Streaming)
+- [x] Phase 2: Knowledge Ingestion (PDF Loader, FAISS Vector Index integration)
 - [ ] Phase 3: Agentic Synthesis (Gemini CLI integration for automated report generation)
 - [ ] Phase 4: Deployment (PyInstaller Binary for standalone terminal usage)
 
