@@ -2,6 +2,7 @@ import click
 import os
 from src.dummy_log_generator_file import create_dummy_logs
 from src.parser import LogParser
+from src.ingestion import KnowledgeBase
 
 @click.group()
 def cli():
@@ -26,7 +27,9 @@ def parse(file):
 
     click.echo(f"Parsing log file: {file}...")
     parser = LogParser()
-    parser.parse_file(file)
+    # Handle the generator output
+    for result in parser.parse_file(file):
+        pass # We just want the summary for now
     
     summary = parser.get_summary()
     click.echo(f"\nDiscovered {len(summary)} Unique Log Templates:\n")
@@ -34,9 +37,17 @@ def parse(file):
         click.echo(f"ID {s['id']} (Count: {s['count']}): {s['template']}")
 
 @cli.command()
-def ingest():
-    """[Placeholder] Ingest technical manuals into the vector database."""
-    click.echo("Ingestion module coming soon (PDF manuals required).")
+@click.option('--file', required=True, help='Path to the PDF technical manual.')
+def ingest(file):
+    """Ingest technical manuals into the vector database (FAISS)."""
+    if not os.path.exists(file):
+        click.echo(f"Error: File {file} not found.")
+        return
+
+    click.echo(f"Ingesting manual: {file}...")
+    kb = KnowledgeBase()
+    num_chunks = kb.ingest_pdf(file)
+    click.echo(f"Successfully ingested {num_chunks} chunks into FAISS vector database.")
 
 @cli.command()
 def analyze():
