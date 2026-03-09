@@ -27,6 +27,11 @@ I implemented **Semantic Search** to find meaning rather than just matching keyw
 * **Concept:** I convert text chunks into 384-dimensional vectors. When a log template is found, I perform a mathematical similarity search in that vector space to find the explanation in the manual.
 * **My Decision:** I chose this over keyword search to handle the complex technical vocabulary found in EDA and SLT environments.
 
+### 4. Agentic Synthesis (The Reasoning Layer)
+I implemented an **Autonomous Agent** to act as the final synthesis layer of the system.
+* **Concept:** The agent uses the retrieved documentation and the discovered log variables to reason through the failure. It doesn't just chat; it performs technical deduction to explain the root cause and provide fix steps.
+* **My Decision:** I integrated the Google Gemini model via the raw SDK to ensure maximum stability and leveraged custom prompt engineering to force the model to adopt a professional "Senior Debug Engineer" persona.
+
 ---
 
 ## Library Selection: The Toolkit I Curated
@@ -45,11 +50,11 @@ I hand-picked each library in this stack to ensure production-grade performance 
 ### 4. Sentence-Transformers (My Embedding Engine)
 * **Why I chose it:** I selected the `all-MiniLM-L6-v2` model. It provides the perfect balance between high embedding accuracy and low compute overhead, ensuring my M4 cores aren't pegged just during the search phase.
 
-### 5. Multiprocessing (My Parallelism Engine)
-* **Why I chose it:** To handle 80GB files, I architected a custom parallel wrapper around the parser. I used the `multiprocessing` library to bypass Python's Global Interpreter Lock (GIL), allowing the tool to scale linearly with the core count of any machine it's deployed on.
+### 5. Google GenAI SDK (My Intelligence Engine)
+* **Why I chose it:** To ensure my Agentic layer was robust against versioning issues in wrapper libraries, I implemented the final synthesis using the raw Google GenAI SDK. This allowed me to implement custom retry logic and exponential backoff to handle free-tier API rate limits in a production-safe way.
 
-### 6. Click (My Interface Standard)
-* **Why I chose it:** I moved the project away from Jupyter Notebooks and used Click to build a professional CLI. This ensures my tool is deployable in standard Linux server environments and supports the complex flags needed for industrial usage.
+### 6. Multiprocessing (My Parallelism Engine)
+* **Why I chose it:** To handle 80GB files, I architected a custom parallel wrapper around the parser. I used the `multiprocessing` library to bypass Python's Global Interpreter Lock (GIL), allowing the tool to scale linearly with the core count of any machine it's deployed on.
 
 ---
 
@@ -59,6 +64,6 @@ Throughout this project, I have managed the "Agent" as an execution layer while 
 1. **Problem Scoping:** I defined the specific challenges of EDA and SLT logs.
 2. **Resource Management:** I rejected memory-heavy implementations in favor of my "Memory-Safe Streaming" requirement.
 3. **Environment Management:** I navigated the complexities of the Python 3.14 rollout, making the necessary pivots to FAISS to maintain project velocity.
-4. **Data Integrity:** I directed the creation of high-fidelity simulation data to prove the system works on real-world netlists and hierarchical designs.
+4. **Agentic Direction:** I guided the implementation of the final synthesis agent, ensuring its outputs were professional, grounded, and actionable.
 
 **I have transformed a complex AI research concept into a stable, scalable, and professional engineering product.**

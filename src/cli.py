@@ -4,6 +4,7 @@ import multiprocessing
 from src.dummy_log_generator_file import create_dummy_logs
 from src.parser import LogParser
 from src.ingestion import KnowledgeBase
+from src.agent import TriageAgent
 
 @click.group()
 def cli():
@@ -40,9 +41,6 @@ def parse(file, severity):
     click.echo("-" * 100)
     
     for i, (template, data) in enumerate(sorted_summary, 1):
-        # Calculate approx global line number based on chunk and line count
-        # In this simplistic version, we'll just show the chunk ID and local count
-        # for true traceability.
         loc = f"Chunk {data['chunk_id']}:{data['first_line_in_chunk']}"
         click.echo(f"{i:<5} {data['count']:<8} {data['severity']:<10} {loc:<20} {template}")
 
@@ -60,9 +58,31 @@ def ingest(file):
     click.echo(f"Successfully ingested {num_chunks} chunks into FAISS vector database.")
 
 @cli.command()
-def analyze():
-    """[Placeholder] Run the full Agentic RAG analysis on a log file."""
-    click.echo("Synthesis module coming soon.")
+@click.option('--file', required=True, help='Path to the log file to analyze.')
+@click.option('--output', default='triage_report.md', help='Path to save the Markdown report.')
+def analyze(file, output):
+    """Run the full Agentic RAG analysis on a log file."""
+    if not os.path.exists(file):
+        click.echo(f"Error: File {file} not found.")
+        return
+
+    click.echo(f"Step 1: Parsing log file in parallel...")
+    parser = LogParser()
+    # We get the full summary (no initial filter so the agent has full context)
+    summary = parser.parse_file_parallel(file)
+    
+    click.echo(f"Step 2: Synthesizing Intelligent Report via Gemini...")
+    agent = TriageAgent()
+    report = agent.synthesize_report(summary)
+    
+    with open(output, 'w') as f:
+        f.write(report)
+    
+    click.echo(f"\n--- Analysis Complete ---")
+    click.echo(f"Report saved to: {output}")
+    click.echo("\n--- Executive Summary (Preview) ---")
+    # Show the first 20 lines of the report as a preview
+    click.echo("\n".join(report.split("\n")[:20]))
 
 if __name__ == "__main__":
     cli()
