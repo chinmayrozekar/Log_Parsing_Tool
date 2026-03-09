@@ -1,10 +1,10 @@
-# Agentic RAG Log Triage System
+# SiliconSentry: Agentic RAG Log Triage System
 
 [![AI Framework](https://img.shields.io/badge/AI-Gemini%20CLI-blue)](https://github.com/google/gemini-cli)
 [![Log Parsing](https://img.shields.io/badge/Parser-Drain3-green)](https://github.com/logpai/drain3)
 [![Vector DB](https://img.shields.io/badge/VectorDB-FAISS-orange)](https://github.com/facebookresearch/faiss)
 
-An automated, production-ready debugging agent designed for high-throughput environments (Semiconductors, Network Infrastructure, Cloud Ops). This system eliminates manual log scrolling by standardizing raw logs, cross-references errors against official technical documentation, and generates verifiable root-cause reports.
+SiliconSentry is an automated, production-ready debugging agent designed for high-throughput environments (Semiconductors, Network Infrastructure, Cloud Ops). This system eliminates manual log scrolling by standardizing raw logs, cross-references errors against official technical documentation, and generates verifiable root-cause reports.
 
 ---
 
@@ -36,34 +36,24 @@ graph TD
 
 ---
 
-## Core AI Concepts: The Why
+## Installation and Execution
 
-### 1. Template Mining (Drain3)
-Standard RegEx is brittle and fails in high-throughput environments where log formats change frequently. We use Drain3, an online log parsing approach using a fixed-depth tree. It automatically discovers the "skeleton" (template) of a log message while masking dynamic variables (IPs, Hex codes, IDs).
-* Why? It turns millions of noisy log lines into a few dozen unique event types, making downstream analysis 100x faster.
-
-### 2. Intelligent Parallelism
-For massive log files (80GB+), traditional file loading will crash a system. Our parser implements resource-aware multiprocessing. It partitions files into byte-offset chunks and processes them across all available CPU cores.
-* Why? This ensures 100% coverage of proprietary logs at maximum hardware speed while maintaining a constant memory footprint (less than 100MB usage).
-
-### 3. Retrieval-Augmented Generation (RAG)
-LLMs are prone to hallucinations (making up technical fixes that don't exist). We use RAG to ground the AI in reality. By storing official technical manuals in a FAISS Vector Database, we force the AI to only suggest fixes found in the actual documentation.
-* Why? High-stakes environments (like semiconductor testing) require verifiable fixes, not creative guesses.
-
-### 4. Agentic Synthesis
-The final layer uses an AI Agent to act as a Senior Systems Engineer. It takes the discovered patterns, matches them against the RAG context, and synthesizes a professional engineering report with root causes and actionable steps.
-* Why? It automates the most time-consuming part of the triage process: the actual research and reporting.
-
----
-
-## Installation and Setup
+### Option 1: Standalone Binary (Fastest)
+If you have downloaded the `SiliconSentry` executable, you can run it directly from your terminal. No Python installation is required.
 
 ```bash
-# Clone the repository
+# Set your API Key
+export GOOGLE_API_KEY="your_key_here"
+
+# Run the tool
+./SiliconSentry --help
+```
+
+### Option 2: Development Setup (Source)
+```bash
+# Clone and Setup
 git clone https://github.com/chinmayrozekar/Log_Parsing_Tool.git
 cd Log_Parsing_Tool
-
-# Setup Virtual Environment
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -77,50 +67,41 @@ echo "GOOGLE_API_KEY=your_key_here" > .env
 
 ## Usage Examples
 
-### 1. Ingest Technical Manuals (Phase 3)
+### 1. Ingest Technical Manuals
 Process a PDF manual into searchable semantic chunks stored in FAISS.
 ```bash
 python3 src/main.py ingest --file docs/manuals/yosys_manual.pdf
 ```
 
 ### 2. Generate Realistic Test Data
-Generate high-fidelity industrial logs for testing (EDA simulations or SLT Benchmarks).
 ```bash
 # Generate 60MB Hierarchical PERC DRC Log
 python3 src/eda_log_generator.py
 
-# Generate 100MB SLT CPU/GPU/Peripheral Benchmark Log
+# Generate 100MB SLT Benchmark Log
 python3 src/slt_log_generator.py
 ```
 
-### 3. Intelligent Triage and Parsing (Phase 1 and 2)
-Run the parallel Drain3 miner to identify unique log signatures with severity filtering and density ranking.
-```bash
-# Parse only CRITICAL failures from a 100MB SLT log
-python3 src/main.py parse --file data/raw_logs/slt_benchmark_100mb.log --severity CRITICAL
-```
-
-### 4. Full Autonomous Analysis (Phase 4)
-Run the end-to-end pipeline to generate a professional triage report based on log trends and technical manuals.
+### 3. Full Autonomous Analysis
+Run the end-to-end pipeline to generate a professional triage report.
 ```bash
 python3 src/main.py analyze --file data/raw_logs/perc_drc_hierarchical.log
 ```
 
 ---
 
-## Roadmap
-
-- [x] Phase 1: Log Extraction (Drain3 Implementation, Template Discovery)
-- [x] Phase 2: High-Performance Triage (Resource-Aware Parallelism, Severity Filtering, Density Ranking)
-- [x] Phase 3: Knowledge Ingestion (PDF Loader, FAISS Vector Index integration)
-- [x] Phase 4: Agentic Synthesis (Gemini Integration for automated report generation)
-- [ ] Phase 5: Deployment (PyInstaller Binary for standalone terminal usage)
+## Building the Binary
+To compile the source code into a standalone binary yourself:
+```bash
+pip install pyinstaller
+pyinstaller --noconfirm --onefile --console --add-data "drain3.ini:." --hidden-import charset_normalizer --name SiliconSentry src/main.py
+```
 
 ---
 
 ## Acknowledgments
 
-This project was built and architected in collaboration with Google Gemini CLI. The entire development lifecycle (from environment setup to the implementation of the multi-core parser and this documentation) was assisted by Generative AI to ensure production-grade standards and idiomatic Python patterns.
+This project was built and architected in collaboration with Google Gemini CLI. The entire development lifecycle was assisted by Generative AI to ensure production-grade standards and idiomatic Python patterns.
 
 ---
 
