@@ -7,8 +7,11 @@ from langchain_community.vectorstores import FAISS
 class KnowledgeBase:
     def __init__(self, db_dir="data/faiss_db"):
         self.db_dir = db_dir
-        # Use the modern HuggingFaceEmbeddings
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        # Use the modern HuggingFaceEmbeddings forced to local only
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="all-MiniLM-L6-v2",
+            model_kwargs={'local_files_only': True}
+        )
         self.vectordb = None
 
     def ingest_pdf(self, pdf_path):
