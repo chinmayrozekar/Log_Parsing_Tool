@@ -30,7 +30,7 @@ I implemented **Semantic Search** to find meaning rather than just matching keyw
 ### 4. Agentic Synthesis (The Reasoning Layer)
 I implemented an **Autonomous Agent** to act as the final synthesis layer of the system.
 * **Concept:** The agent uses the retrieved documentation and the discovered log variables to reason through the failure. It doesn't just chat; it performs technical deduction to explain the root cause and provide fix steps.
-* **My Decision:** I pivoted the system to use **Ollama (Llama 3)** to eliminate dependencies on unstable cloud APIs and ensure the tool remains operational in secure, air-gapped industrial environments.
+* **My Decision:** I pivoted the system to use **Ollama (Qwen2.5-Coder:7b)** to eliminate dependencies on unstable cloud APIs. I specifically selected the **Qwen2.5-Coder** model because it is best-in-class for technical reasoning, ensuring the tool remains operational and highly precise in secure, air-gapped industrial environments.
 
 ---
 

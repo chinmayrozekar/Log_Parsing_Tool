@@ -1,81 +1,75 @@
 import os
-import time
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from langchain_ollama import OllamaLLM
+from langchain_core.prompts import ChatPromptTemplate
 from src.ingestion import KnowledgeBase
 
-load_dotenv()
-
 class TriageAgent:
-    def __init__(self, model_name="gemini-flash-latest"):
+    def __init__(self, model_name="qwen2.5-coder:7b"):
         """
-        Initializes the Triage Agent using the raw Google GenAI SDK with high-reliability retries.
+        Initializes the Triage Agent using local Ollama with Qwen2.5-Coder.
+        This model is best-in-class for technical reasoning and industrial triage.
         """
         self.kb = KnowledgeBase()
         if not self.kb.load_db():
             print("Warning: Knowledge base not found in data/faiss_db. Please run 'ingest' first.")
         
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY not found in environment or .env file")
-
-        # Initialize the raw client
-        self.client = genai.Client(api_key=api_key)
-        self.model_name = model_name
+        # Use local Qwen2.5-Coder model for superior technical analysis
+        print(f"Initializing local Agentic layer via Ollama ({model_name})...")
+        self.llm = OllamaLLM(model=model_name)
         
     def synthesize_report(self, log_summary):
         """
-        Takes a summary of log templates, retrieves documentation, and generates a report with retries.
+        Takes a summary of log templates, retrieves documentation, and generates a report locally.
         """
         evidence = []
         critical_patterns = {k: v for k, v in log_summary.items() if v['severity'] in ['ERROR', 'CRITICAL']}
-        # Take top 5 to keep prompt size manageable for free tier
-        sorted_patterns = sorted(critical_patterns.items(), key=lambda x: x[1]['count'], reverse=True)[:5]
+        
+        # We can handle more patterns locally without network overhead
+        sorted_patterns = sorted(critical_patterns.items(), key=lambda x: x[1]['count'], reverse=True)[:10]
         
         if not sorted_patterns:
-            return "# Triage Report\n\nNo critical errors or failures were identified."
+            return "# Triage Report\n\nNo critical errors or failures were identified in the log analysis."
 
         for template, data in sorted_patterns:
-            docs = self.kb.query(template, k=1)
+            # Retrieve relevant documentation from FAISS
+            docs = self.kb.query(template, k=2)
             context = "\n".join([doc.page_content for doc in docs])
             
-            evidence.append(
-                f"Template: {template}\nFrequency: {data['count']}\nSeverity: {data['severity']}\nManual Context: {context}\n"
-            )
+            evidence.append({
+                "template": template,
+                "count": data['count'],
+                "severity": data['severity'],
+                "context": context
+            })
 
-        evidence_formatted = "\n------------------\n".join(evidence)
-
-        prompt_text = f"""
-        You are a Senior Systems Debug Engineer. Analyze these failure patterns and excerpts from the manual.
+        # 2. Construct the prompt
+        prompt_text = """
+        You are a Senior Systems Debug Engineer. Analyze the failure patterns below and provide a triage report.
+        
+        Below are failure patterns discovered in the system logs, along with technical manual excerpts.
         
         --- FAILURE EVIDENCE ---
         {evidence_formatted}
         
         --- INSTRUCTIONS ---
-        1. Summarize the overall system health.
-        2. Provide 'Root Cause' and 'Actionable Fix Steps' grounded ONLY in the documentation provided.
-        3. If documentation is missing, state 'Further verification required'.
+        1. Summarize overall system health in an 'Executive Summary'.
+        2. For each failure pattern, provide a 'Root Cause' based on the manual context.
+        3. Identify if the failure is 'Systematic' or 'Sporadic'.
+        4. Provide specific 'Actionable Fix Steps' grounded ONLY in the documentation provided.
         
-        Format as a professional Markdown report.
+        Format the output as a professional Markdown report.
         """
         
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                print(f"Agent is synthesizing report via Gemini ({self.model_name}) - Attempt {attempt+1}...")
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt_text
-                )
-                return response.text
-            except Exception as e:
-                if "429" in str(e) and attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 30
-                    print(f"Rate limit hit. Waiting {wait_time}s...")
-                    time.sleep(wait_time)
-                    continue
-                return f"Error: Synthesis failed. Details: {str(e)}"
+        evidence_formatted = ""
+        for ev in evidence:
+            evidence_formatted += f"\nTemplate: {ev['template']}\nFrequency: {ev['count']}\nSeverity: {ev['severity']}\nManual Context: {ev['context']}\n------------------\n"
+
+        prompt = ChatPromptTemplate.from_template(prompt_text)
+        chain = prompt | self.llm
+        
+        print(f"Agent is synthesizing local report via Ollama...")
+        response = chain.invoke({"evidence_formatted": evidence_formatted})
+        return response
 
 if __name__ == "__main__":
-    print("Triage Agent Module (Reliable) Ready.")
+    print("Local Triage Agent Module Ready.")
